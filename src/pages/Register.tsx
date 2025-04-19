@@ -10,11 +10,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { registerUser } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { registerUser, isLoading } = useAuth();
   
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -41,7 +41,6 @@ const Register = () => {
     }
 
     try {
-      setIsLoading(true);
       await registerUser({
         firstName,
         lastName,
@@ -51,9 +50,12 @@ const Register = () => {
       });
       navigate('/login');
     } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Registration failed. Please try again.');
+      }
       console.error('Registration error:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -66,6 +68,12 @@ const Register = () => {
         </div>
         
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -145,10 +153,6 @@ const Register = () => {
               />
             </div>
           </div>
-
-          {error && (
-            <div className="text-red-500 text-sm">{error}</div>
-          )}
 
           <Button 
             type="submit" 
