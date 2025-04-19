@@ -2,9 +2,10 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { toast } from '@/components/ui/sonner'
+import { User } from '@supabase/supabase-js'
 
 export const useAuth = () => {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<User | null>(null)
 
   const registerUser = async (userData: {
     email: string, 
