@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { toast } from '@/components/ui/sonner';
 
 type UserProfile = {
   first_name: string;
@@ -20,27 +21,34 @@ const Welcome = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      
-      if (!data.session) {
-        navigate('/login');
-        return;
+      try {
+        const { data } = await supabase.auth.getSession();
+        
+        if (!data.session) {
+          navigate('/login');
+          return;
+        }
+        
+        // Fetch user profile data
+        const { data: profileData, error } = await supabase
+          .from('user_profiles')
+          .select('first_name, last_name, date_of_birth')
+          .eq('user_id', data.session.user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+          if (error.message !== 'Supabase not configured') {
+            toast.error('Error loading profile');
+          }
+        } else if (profileData) {
+          setProfile(profileData);
+        }
+      } catch (err) {
+        console.error('Error in auth check:', err);
+      } finally {
+        setLoading(false);
       }
-      
-      // Fetch user profile data
-      const { data: profileData, error } = await supabase
-        .from('user_profiles')
-        .select('first_name, last_name, date_of_birth')
-        .eq('user_id', data.session.user.id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching profile:', error);
-      } else if (profileData) {
-        setProfile(profileData);
-      }
-      
-      setLoading(false);
     };
     
     checkAuth();
@@ -66,9 +74,13 @@ const Welcome = () => {
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Welcome</h1>
-          {profile && (
+          {profile ? (
             <p className="mt-2 text-gray-600">
               Hello {profile.first_name} {profile.last_name}!
+            </p>
+          ) : (
+            <p className="mt-2 text-gray-600">
+              Please connect your app to Supabase to enable authentication features
             </p>
           )}
         </div>
@@ -88,13 +100,21 @@ const Welcome = () => {
               </div>
             </>
           )}
+          
+          {!profile && (
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">
+              <p className="text-amber-800 text-sm">
+                To enable full functionality, please connect your app to Supabase using the green Supabase button at the top right of the interface.
+              </p>
+            </div>
+          )}
         </div>
         
         <Button 
           onClick={handleLogout} 
           className="w-full"
         >
-          Logout
+          {profile ? "Logout" : "Back to Login"}
         </Button>
       </div>
     </div>

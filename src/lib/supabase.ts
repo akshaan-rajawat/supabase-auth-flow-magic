@@ -22,11 +22,15 @@ export const supabase = (() => {
         getSession: () => Promise.resolve({ data: { session: null }, error: null })
       },
       from: () => ({
-        select: () => ({ single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) }),
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') })
+          }),
+          single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') })
+        }),
         insert: () => Promise.resolve({ error: new Error('Supabase not configured') }),
         update: () => Promise.resolve({ error: new Error('Supabase not configured') }),
-        delete: () => Promise.resolve({ error: new Error('Supabase not configured') }),
-        eq: () => ({ single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) })
+        delete: () => Promise.resolve({ error: new Error('Supabase not configured') })
       })
     };
   }
