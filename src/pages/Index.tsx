@@ -7,7 +7,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 relative">
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow text-center">
         <h1 className="text-3xl font-bold">Welcome to Our App</h1>
         <p className="text-xl text-gray-600">Please register or login to continue</p>
@@ -22,8 +22,13 @@ const Index = () => {
           </Button>
         </div>
       </div>
+      
+      <div className="absolute bottom-4 right-4 text-sm text-gray-500">
+        Made with ❤️ by Akshaan and Gowtham
+      </div>
     </div>
   );
 };
 
 export default Index;
+
