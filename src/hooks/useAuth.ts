@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { toast } from '@/components/ui/sonner'
 import { User, Session } from '@supabase/supabase-js'
+import type { UserProfile } from '@/types/auth'
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
 
@@ -17,6 +19,13 @@ export const useAuth = () => {
       (event, currentSession) => {
         setSession(currentSession)
         setUser(currentSession?.user ?? null)
+        
+        // Fetch profile data when session changes
+        if (currentSession?.user) {
+          fetchProfile(currentSession.user.id)
+        } else {
+          setProfile(null)
+        }
       }
     )
 
@@ -24,6 +33,9 @@ export const useAuth = () => {
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession)
       setUser(currentSession?.user ?? null)
+      if (currentSession?.user) {
+        fetchProfile(currentSession.user.id)
+      }
       setIsInitialized(true)
     })
 
@@ -31,6 +43,21 @@ export const useAuth = () => {
       subscription.unsubscribe()
     }
   }, [])
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (error) throw error
+      setProfile(data)
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    }
+  }
 
   const registerUser = async (userData: {
     email: string, 
@@ -41,41 +68,22 @@ export const useAuth = () => {
   }) => {
     setIsLoading(true)
     try {
-      // Register user in Supabase Auth
       const { data, error: authError } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
+        options: {
+          data: {
+            first_name: userData.firstName,
+            last_name: userData.lastName
+          }
+        }
       })
 
       if (authError) throw authError
 
-      // If auth successful, add profile to user_profiles
-      if (data.user) {
-        // First check if the table exists to prevent 404 errors
-        try {
-          const { error: profileError } = await supabase
-            .from('user_profiles')
-            .insert({
-              user_id: data.user.id,
-              first_name: userData.firstName,
-              last_name: userData.lastName,
-              date_of_birth: userData.dateOfBirth
-            })
-
-          if (profileError) {
-            console.error('Error creating profile:', profileError)
-            toast.error('Account created but profile setup failed')
-          } else {
-            toast.success('Registration Successful! Please check your email to confirm your account.')
-          }
-        } catch (error) {
-          console.error('Profile creation error:', error)
-          toast.warning('User registered but could not create profile. The user_profiles table may not exist yet.')
-        }
-        
+      if (data?.user) {
+        toast.success('Registration successful! You can now log in.')
         return data.user
-      } else {
-        throw new Error('User registration failed')
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Registration failed')
@@ -137,6 +145,7 @@ export const useAuth = () => {
     logoutUser,
     user,
     session,
+    profile,
     isLoading,
     isInitialized
   }
