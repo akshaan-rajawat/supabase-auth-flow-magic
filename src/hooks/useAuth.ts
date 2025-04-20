@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { toast } from '@/components/ui/sonner'
@@ -12,15 +11,12 @@ export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
 
-  // Setup auth state listener and check initial session
   useEffect(() => {
-    // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         setSession(currentSession)
         setUser(currentSession?.user ?? null)
         
-        // Fetch profile data when session changes
         if (currentSession?.user) {
           fetchProfile(currentSession.user.id)
         } else {
@@ -29,7 +25,6 @@ export const useAuth = () => {
       }
     )
 
-    // Then check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession)
       setUser(currentSession?.user ?? null)
@@ -109,11 +104,7 @@ export const useAuth = () => {
       return data.user
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message === 'Email not confirmed') {
-          toast.error('Please check your email to confirm your account before logging in')
-        } else {
-          toast.error(error.message)
-        }
+        toast.error(error.message)
       } else {
         toast.error('Login failed')
       }
