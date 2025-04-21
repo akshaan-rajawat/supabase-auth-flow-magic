@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { toast } from '@/components/ui/sonner'
@@ -63,24 +64,27 @@ export const useAuth = () => {
   }) => {
     setIsLoading(true)
     try {
-      const { data, error: authError } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            first_name: userData.firstName,
-            last_name: userData.lastName
+      // Use the Supabase integrations client to avoid email provider disabled error
+      const { data: { session: authSession, user: authUser }, error: authError } = 
+        await supabase.auth.signUp({
+          email: userData.email,
+          password: userData.password,
+          options: {
+            data: {
+              first_name: userData.firstName,
+              last_name: userData.lastName
+            }
           }
-        }
-      })
+        })
 
       if (authError) throw authError
 
-      if (data?.user) {
+      if (authUser) {
         toast.success('Registration successful! You can now log in.')
-        return data.user
+        return authUser
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Registration error:', error)
       toast.error(error instanceof Error ? error.message : 'Registration failed')
       throw error
     } finally {
